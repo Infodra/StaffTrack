@@ -17,19 +17,41 @@ steps:
       - 'NODE_ENV=production'
     id: 'deploy-backend'
 
-  # Build and deploy frontend
+  # Build frontend Docker image with API URL
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_API_BASE_URL=https://api.st.infodra.ai/api'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/attendance-frontend:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/attendance-frontend:latest'
+      - './frontend'
+    id: 'build-frontend'
+    waitFor: ['deploy-backend']
+
+  # Push frontend image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/attendance-frontend:$COMMIT_SHA'
+    id: 'push-frontend'
+    waitFor: ['build-frontend']
+
+  # Deploy frontend to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'run'
       - 'deploy'
       - 'attendance-frontend'
-      - '--source=./frontend'
+      - '--image=gcr.io/$PROJECT_ID/attendance-frontend:$COMMIT_SHA'
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--port=8080'
     id: 'deploy-frontend'
-    waitFor: ['deploy-backend']
+    waitFor: ['push-frontend']
 
 options:
   logging: CLOUD_LOGGING_ONLY
