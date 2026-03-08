@@ -18,24 +18,24 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add X-Company-ID header for development mode (localhost)
+    // Add X-Company-ID header for all requests
     const hostname = window.location.hostname;
     const tenant = getTenantFromHostname();
     
-    if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
-      // For localhost, always send default company ID
+    // Always send company ID header (for API domain routing)
+    if (tenant) {
+      config.headers['X-Company-ID'] = tenant.toUpperCase();
+    } else if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      // For localhost, try to get from user data or use default
       if (!config.headers['X-Company-ID']) {
-        // Try to get from user data first
         try {
           const user = JSON.parse(localStorage.getItem('user'));
           if (user?.company?.company_id) {
             config.headers['X-Company-ID'] = user.company.company_id;
           } else {
-            // Default to TECINFO for development
             config.headers['X-Company-ID'] = 'TECINFO';
           }
         } catch (e) {
-          // If no user data, use default
           config.headers['X-Company-ID'] = 'TECINFO';
         }
       }

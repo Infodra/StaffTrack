@@ -37,6 +37,25 @@ const tenantMiddleware = async (req, res, next) => {
       return next();
     }
 
+    // Skip tenant detection for API domain (api.st.infodra.ai)
+    // Use X-Company-ID header instead for tenant identification
+    if (host.startsWith('api.')) {
+      const companyId = req.headers['x-company-id'];
+      
+      if (companyId) {
+        const company = await Company.findOne({ 
+          company_id: companyId.toUpperCase() 
+        });
+
+        if (company) {
+          req.company = company;
+          req.tenant = companyId.toLowerCase();
+        }
+      }
+      
+      return next();
+    }
+
     // Extract subdomain from host
     // Format: tecinfo.st.infodra.ai → ['tecinfo', 'st', 'infodra', 'ai']
     const parts = host.split('.');
