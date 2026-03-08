@@ -1,0 +1,5 @@
+employee_id,name,email,password,role,department,status,location_name,latitude,longitude,radius_meters
+EMP001,Raj Kumar,raj@company.com,password123,admin,Management,active,Main Office,13.0827,80.2707,150
+EMP002,Priya Sharma,priya@company.com,password123,employee,Field Service,active,Client Office A,13.0850,80.2750,100
+EMP003,Arun Kumar,arun@company.com,password123,employee,Sales,active,Branch Office,13.0900,80.2800,150
+EMP004,Lakshmi Devi,lakshmi@company.com,password123,employee,IT,active,Main Office,13.0827,80.2707,150

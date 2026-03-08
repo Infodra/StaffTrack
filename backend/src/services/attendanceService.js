@@ -1,0 +1,201 @@
+const Attendance = require('../models/Attendance');
+const LocationLog = require('../models/LocationLog');
+const { checkGeofence, validateCoordinates } = require('./gpsService');
+
+/**
+ * Process login
+ * @param {Object} employee - Employee object
+ * @param {Object} company - Company object
+ * @param {Number} latitude - Login latitude
+ * @param {Number} longitude - Login longitude
+ * @returns {Object} Attendance record
+ */
+const processLogin = async (employee, company, latitude, longitude) => {
+  // Validate coordinates
+  if (!validateCoordinates(latitude, longitude)) {
+    throw new Error('Invalid GPS coordinates');
+  }
+
+  // Check geofence
+  const geofenceResult = checkGeofence(
+    latitude,
+    longitude,
+    company.office_location.latitude,
+    company.office_location.longitude,
+    company.geofence_radius
+  );
+
+  if (!geofenceResult.isWithinGeofence) {
+    throw new Error(
+      `You are ${geofenceResult.distance}m away from the office. Please move within ${company.geofence_radius}m radius to login.`
+    );
+  }
+
+  // Get today's date (start of day)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Check if already logged in today
+  const existingAttendance = await Attendance.findOne({
+    company_id: company._id,
+    employee_id: employee._id,
+    date: today
+  });
+
+  if (existingAttendance) {
+    throw new Error('You have already logged in today');
+  }
+
+  // Create attendance record
+  const attendance = await Attendance.create({
+    company_id: company._id,
+    employee_id: employee._id,
+    date: today,
+    check_in: {
+      time: new Date(),
+      location: {
+        latitude,
+        longitude
+      }
+    },
+    status: 'present'
+  });
+
+  // Log location
+  await LocationLog.create({
+    employee_id: employee._id,
+    timestamp: new Date(),
+    latitude,
+    longitude,
+    action: 'login'
+  });
+
+  return attendance;
+};
+
+/**
+ * Process logout
+ * @param {Object} employee - Employee object
+ * @param {Object} company - Company object
+ * @param {Number} latitude - Logout latitude
+ * @param {Number} longitude - Logout longitude
+ * @returns {Object} Updated attendance record
+ */
+const processLogout = async (employee, company, latitude, longitude) => {
+  // Validate coordinates
+  if (!validateCoordinates(latitude, longitude)) {
+    throw new Error('Invalid GPS coordinates');
+  }
+
+  // Check geofence
+  const geofenceResult = checkGeofence(
+    latitude,
+    longitude,
+    company.office_location.latitude,
+    company.office_location.longitude,
+    company.geofence_radius
+  );
+
+  if (!geofenceResult.isWithinGeofence) {
+    throw new Error(
+      `You are ${geofenceResult.distance}m away from the office. Please move within ${company.geofence_radius}m radius to logout.`
+    );
+  }
+
+  // Get today's date (start of day)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Find today's attendance
+  const attendance = await Attendance.findOne({
+    company_id: company._id,
+    employee_id: employee._id,
+    date: today
+  });
+
+  if (!attendance) {
+    throw new Error('No login record found for today. Please login first.');
+  }
+
+  if (attendance.check_out && attendance.check_out.time) {
+    throw new Error('You have already logged out today');
+  }
+
+  // Update attendance with logout
+  attendance.check_out = {
+    time: new Date(),
+    location: {
+      latitude,
+      longitude
+    }
+  };
+
+  await attendance.save();
+
+  // Log location
+  await LocationLog.create({
+    employee_id: employee._id,
+    timestamp: new Date(),
+    latitude,
+    longitude,
+    action: 'logout'
+  });
+
+  return attendance;
+};
+
+/**
+ * Get attendance history for an employee
+ * @param {String} companyId - Company ID
+ * @param {String} employeeId - Employee ID
+ * @param {Date} startDate - Start date (optional)
+ * @param {Date} endDate - End date (optional)
+ * @param {Number} page - Page number
+ * @param {Number} limit - Records per page
+ * @returns {Object} Attendance records with pagination
+ */
+const getAttendanceHistory = async (companyId, employeeId, startDate, endDate, page = 1, limit = 30) => {
+  const query = {
+    company_id: companyId,
+    employee_id: employeeId
+  };
+
+  // Add date range filter if provided
+  if (startDate || endDate) {
+    query.date = {};
+    if (startDate) {
+      query.date.$gte = startDate;
+    }
+    if (endDate) {
+      query.date.$lte = endDate;
+    }
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [records, total] = await Promise.all([
+    Attendance.find(query)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('employee_id', 'name email department')
+      .lean(),
+    Attendance.countDocuments(query)
+  ]);
+
+  return {
+    records,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      limit
+    }
+  };
+};
+
+module.exports = {
+  processLogin,
+  processLogout,
+  getAttendanceHistory
+};

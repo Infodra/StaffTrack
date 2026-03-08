@@ -1,0 +1,165 @@
+# Company Data Template
+# Fill in this template with your company information
+
+## ========================================
+## COMPANY INFORMATION
+## ========================================
+
+COMPANY_ID:         # Example: TEC001, INFOD001 (3-10 characters, will be uppercase)
+COMPANY_NAME:       # Example: Tecinfo, Infodra Technologies
+ADMIN_EMAIL:        # Example: admin@tecinfo.com
+ADMIN_PASSWORD:     # Minimum 6 characters (keep secure!)
+ADMIN_NAME:         # Example: Raj Kumar
+EMPLOYEE_LIMIT:     # Example: 50, 100, 500
+LICENSE_TYPE:       # Options: lifetime, annual, monthly
+
+## ========================================
+## EMPLOYEE LIST
+## ========================================
+
+# For each employee, provide:
+# - employee_id: Unique ID (EMP001, EMP002, etc.)
+# - name: Full name
+# - email: Email address (used for login)
+# - password: Initial password
+# - role: admin or employee
+# - department: Department name
+# - status: active or inactive
+# - location_name: Work location name
+# - latitude: GPS latitude coordinate
+# - longitude: GPS longitude coordinate
+# - radius_meters: Allowed distance from location
+
+# EMPLOYEE 1:
+employee_id:        # Example: EMP001
+name:               # Example: Raj Kumar
+email:              # Example: raj@tecinfo.com
+password:           # Example: password123
+role:               # admin or employee
+department:         # Example: Management
+status:             # active or inactive
+location_name:      # Example: Main Office
+latitude:           # Example: 13.0827
+longitude:          # Example: 80.2707
+radius_meters:      # Example: 150
+
+# EMPLOYEE 2:
+employee_id:        # Example: EMP002
+name:               # Example: Priya Sharma
+email:              # Example: priya@tecinfo.com
+password:           # Example: password123
+role:               # admin or employee
+department:         # Example: Field Service
+status:             # active or inactive
+location_name:      # Example: Client Office A
+latitude:           # Example: 13.0850
+longitude:          # Example: 80.2750
+radius_meters:      # Example: 100
+
+# EMPLOYEE 3:
+employee_id:        # 
+name:               # 
+email:              # 
+password:           # 
+role:               # 
+department:         # 
+status:             # 
+location_name:      # 
+latitude:           # 
+longitude:          # 
+radius_meters:      # 
+
+# EMPLOYEE 4:
+employee_id:        # 
+name:               # 
+email:              # 
+password:           # 
+role:               # 
+department:         # 
+status:             # 
+location_name:      # 
+latitude:           # 
+longitude:          # 
+radius_meters:      # 
+
+# Add more employees as needed...
+
+## ========================================
+## HOW TO GET GPS COORDINATES
+## ========================================
+
+# Method 1: Google Maps (Desktop)
+# 1. Go to https://www.google.com/maps
+# 2. Search for your office location
+# 3. Right-click on the exact location
+# 4. Click on the coordinates (they will be copied)
+# 5. Paste here: Latitude, Longitude
+
+# Method 2: Google Maps (Mobile)
+# 1. Open Google Maps app
+# 2. Long press on the location
+# 3. Coordinates will appear at the top
+# 4. Tap to copy
+
+# Method 3: GPS Coordinates Website
+# Visit: https://www.gps-coordinates.net/
+# Click on map or search location
+
+## ========================================
+## RADIUS GUIDELINES
+## ========================================
+
+# Small Office (single floor):        50-100 meters
+# Large Office/Campus:                 150-200 meters  
+# Field Location/Client Site:          100-150 meters
+# Retail Store:                        50-100 meters
+# Warehouse:                           200-300 meters
+# Construction/Outdoor Site:           150-250 meters
+
+# Note: GPS accuracy is typically ±5-50 meters
+# Set radius larger than expected to account for GPS inaccuracy
+
+## ========================================
+## ENVIRONMENT CONFIGURATION
+## ========================================
+
+# Backend Configuration (backend/.env):
+MONGODB_URI:        # Your MongoDB Atlas connection string
+JWT_SECRET:         # Change to a strong random string (keep secure!)
+PORT:               # Default: 5000
+NODE_ENV:           # development or production
+
+# Frontend Configuration (frontend/.env):
+VITE_API_URL:       # Default: http://localhost:5000/api
+                    # Production: https://your-api-domain.com/api
+
+## ========================================
+## MONGODB ATLAS CHECKLIST
+## ========================================
+
+# [ ] Cluster is active (not paused)
+# [ ] Network Access: Added 0.0.0.0/0 to IP whitelist
+# [ ] Database Access: Created user with read/write permissions
+# [ ] Copied connection string to MONGODB_URI above
+
+## ========================================
+## NEXT STEPS AFTER FILLING THIS TEMPLATE
+## ========================================
+
+# 1. Update backend/.env with MongoDB URI and JWT secret
+# 2. Run: node src/scripts/testConnection.js  (test MongoDB)
+# 3. Run: node src/scripts/initDatabase.js     (create sample data)
+# 4. Start backend: npm run dev
+# 5. Start frontend: cd ../frontend && npm run dev
+# 6. Register your company through the API or frontend
+# 7. Add employees through admin panel
+
+## ========================================
+## SUPPORT
+## ========================================
+
+# Documentation:
+# - COMPANY_SETUP_CHECKLIST.md - Complete setup guide
+# - DATABASE_SCHEMA.md          - Database structure
+# - API_DOCUMENTATION.md        - API reference
+# - SETUP_GUIDE.md              - Installation guide
