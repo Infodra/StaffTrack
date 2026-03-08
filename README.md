@@ -265,3 +265,5 @@ For issues, questions, or contributions:
 ---
 
 **Built with ❤️ for modern workforce management**
+
+<!-- Deployment test: 03/08/2026 19:01:06 -->
