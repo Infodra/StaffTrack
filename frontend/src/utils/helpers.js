@@ -68,8 +68,18 @@ export const getTenantFromHostname = () => {
     return null;
   }
 
-  // stafftrack.infodra.ai = super admin domain (no tenant)
-  if (hostname === 'stafftrack.infodra.ai') {
+  // Vercel preview URLs: stafftrack-xxx.vercel.app (no tenant)
+  if (hostname.endsWith('.vercel.app')) {
+    return null;
+  }
+
+  // Render URLs: xxx.onrender.com (no tenant)
+  if (hostname.endsWith('.onrender.com')) {
+    return null;
+  }
+
+  // stafftrack.infodra.ai or www.stafftrack.infodra.ai = super admin domain (no tenant)
+  if (hostname === 'stafftrack.infodra.ai' || hostname === 'www.stafftrack.infodra.ai') {
     return null;
   }
   
@@ -78,15 +88,11 @@ export const getTenantFromHostname = () => {
   const parts = hostname.split('.');
   
   // subdomain.stafftrack.infodra.ai = 4 parts, first is tenant
-  if (parts.length >= 4) {
+  // But skip 'www' — www.stafftrack.infodra.ai is not a tenant
+  if (parts.length >= 4 && parts[0] !== 'www') {
     return parts[0];
   }
 
-  // Vercel preview URLs: stafftracker-xxx.vercel.app (no tenant)
-  if (hostname.endsWith('.vercel.app')) {
-    return null;
-  }
-  
   return null;
 };
 

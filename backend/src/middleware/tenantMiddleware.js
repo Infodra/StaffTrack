@@ -73,8 +73,35 @@ const tenantMiddleware = async (req, res, next) => {
       return next();
     }
 
+    // Skip tenant detection for Vercel/Render/platform domains and www
+    if (host.endsWith('.vercel.app') || host.endsWith('.onrender.com')) {
+      const companyId = req.headers['x-company-id'];
+      if (companyId) {
+        const company = await Company.findOne({ company_id: companyId.toUpperCase() });
+        if (company) {
+          req.company = company;
+          req.tenant = companyId.toLowerCase();
+        }
+      }
+      return next();
+    }
+
+    // Skip tenant detection for stafftrack.infodra.ai and www.stafftrack.infodra.ai
+    const hostWithoutPort = host.split(':')[0];
+    if (hostWithoutPort === 'stafftrack.infodra.ai' || hostWithoutPort === 'www.stafftrack.infodra.ai') {
+      const companyId = req.headers['x-company-id'];
+      if (companyId) {
+        const company = await Company.findOne({ company_id: companyId.toUpperCase() });
+        if (company) {
+          req.company = company;
+          req.tenant = companyId.toLowerCase();
+        }
+      }
+      return next();
+    }
+
     // Extract subdomain from host
-    // Format: tecinfo.st.infodra.ai → ['tecinfo', 'st', 'infodra', 'ai']
+    // Format: tecinfo.stafftrack.infodra.ai → ['tecinfo', 'stafftrack', 'infodra', 'ai']
     const parts = host.split('.');
     
     if (parts.length < 3) {
