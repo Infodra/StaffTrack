@@ -11,6 +11,12 @@ export const authService = {
   registerCompany: async (data) => {
     const response = await api.post('/auth/register-company', data);
     return response.data;
+  },
+
+  // Forgot password
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
   }
 };
 

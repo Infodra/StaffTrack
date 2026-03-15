@@ -1,8 +1,10 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Company = require('../models/Company');
 const Employee = require('../models/Employee');
 const { generateToken } = require('../utils/tokenUtils');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const { sendPasswordEmail } = require('../utils/emailService');
 
 /**
  * @desc    Register a new company with admin user
@@ -206,7 +208,48 @@ const login = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Forgot password - sends new password to user email
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return errorResponse(res, 503, 'Database connection unavailable. Please try again later.');
+    }
+
+    const { email } = req.body;
+
+    if (!email) {
+      return errorResponse(res, 400, 'Please provide your email address');
+    }
+
+    const employee = await Employee.findOne({ email: email.toLowerCase() });
+
+    if (!employee) {
+      // Return success even if not found to prevent email enumeration
+      return successResponse(res, 200, null, 'If the email exists, a new password has been sent.');
+    }
+
+    // Generate a random 10-char password
+    const newPassword = crypto.randomBytes(5).toString('hex');
+
+    // Update password (pre-save hook will hash it)
+    employee.password = newPassword;
+    await employee.save();
+
+    // Send email
+    await sendPasswordEmail(employee.email, employee.name, newPassword);
+
+    successResponse(res, 200, null, 'A new password has been sent to your email address.');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   registerCompany,
-  login
+  login,
+  forgotPassword
 };

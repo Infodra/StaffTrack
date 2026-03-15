@@ -269,9 +269,20 @@ const createCompanyBySuperAdminValidation = [
   validate
 ];
 
+const forgotPasswordValidation = [
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email')
+    .normalizeEmail(),
+  validate
+];
+
 module.exports = {
   registerCompanyValidation,
   loginValidation,
+  forgotPasswordValidation,
   createEmployeeValidation,
   updateEmployeeValidation,
   attendanceLocationValidation,
