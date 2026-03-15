@@ -128,7 +128,9 @@ const Login = () => {
               <MapPin className="text-white" size={28} />
             </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">{branding.name}</h1>
+          {!branding.logo && (
+            <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">{branding.name}</h1>
+          )}
           <p className="text-sm sm:text-base text-indigo-500 font-semibold">{branding.subtitle}</p>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">{branding.tagline}</p>
         </div>
