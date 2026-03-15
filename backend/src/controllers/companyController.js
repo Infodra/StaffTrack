@@ -154,7 +154,10 @@ const getCompanyBranding = async (req, res, next) => {
     const { tenantId } = req.params;
 
     const company = await Company.findOne({
-      company_id: tenantId.toUpperCase()
+      $or: [
+        { company_id: tenantId.toUpperCase() },
+        { domain: { $regex: new RegExp(`^${tenantId}\.`, 'i') } }
+      ]
     }).select('company_name logo domain');
 
     if (!company) {

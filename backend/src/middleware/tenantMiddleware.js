@@ -113,9 +113,12 @@ const tenantMiddleware = async (req, res, next) => {
 
     const subdomain = parts[0]; // First part is the company identifier
 
-    // Find company by subdomain/company_id
-    const company = await Company.findOne({ 
-      company_id: subdomain.toUpperCase() 
+    // Find company by company_id or by domain (subdomain may differ from company_id)
+    const company = await Company.findOne({
+      $or: [
+        { company_id: subdomain.toUpperCase() },
+        { domain: { $regex: new RegExp(`^${subdomain}\.`, 'i') } }
+      ]
     });
 
     if (!company) {
