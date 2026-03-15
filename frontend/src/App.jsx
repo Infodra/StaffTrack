@@ -14,14 +14,17 @@ import LeavePage from './pages/LeavePage';
 import AdminLeaveManagement from './pages/AdminLeaveManagement';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LandingPage from './pages/LandingPage';
+import { getTenantFromHostname } from './utils/helpers';
 
 function App() {
+  const tenant = getTenantFromHostname();
+
   return (
     <AuthProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* Public Routes - tenant subdomains go straight to login */}
+          <Route path="/" element={tenant ? <Navigate to="/login" replace /> : <LandingPage />} />
           <Route path="/login" element={<Login />} />
 
           {/* Protected Employee Routes */}
