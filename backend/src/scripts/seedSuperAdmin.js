@@ -14,7 +14,7 @@ const SUPER_ADMIN_CONFIG = {
   company: {
     company_id: 'INFODRA',
     company_name: 'Infodra Technologies',
-    admin_email: 'admin@infodra.ai',
+    admin_email: 'connect@infodra.ai',
     domain: 'stafftrack.infodra.ai',
     employee_limit: 10000,
     license_type: 'lifetime',
@@ -29,7 +29,7 @@ const SUPER_ADMIN_CONFIG = {
     employee_id: 'INFODRA-SUPERADMIN',
     company_id: 'INFODRA',
     name: 'Infodra Admin',
-    email: 'admin@infodra.ai',
+    email: 'connect@infodra.ai',
     password: 'Admin@123',
     role: 'super_admin',
     latitude: 12.9716,

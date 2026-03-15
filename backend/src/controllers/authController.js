@@ -62,7 +62,7 @@ const registerCompany = async (req, res, next) => {
     const employee_limit = employeeLimits[subscription_plan || 'basic'];
 
     // Generate domain if not provided
-    const companyDomain = domain || `${generatedCompanyId.toLowerCase()}.st.infodra.ai`;
+    const companyDomain = domain || `${generatedCompanyId.toLowerCase()}.stafftrack.infodra.ai`;
 
     // Create company
     const company = await Company.create({
