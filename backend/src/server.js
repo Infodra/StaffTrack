@@ -5,12 +5,15 @@ const morgan = require('morgan');
 const connectDB = require('./config/db');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 const tenantMiddleware = require('./middleware/tenantMiddleware');
+const { startAutoCheckoutJob } = require('./jobs/autoCheckout');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const companyRoutes = require('./routes/companyRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const superAdminRoutes = require('./routes/superAdminRoutes');
 
 // Initialize express app
 const app = express();
@@ -33,6 +36,16 @@ const corsOptions = {
     if (/\.infodra\.ai$/.test(origin) || origin === 'https://infodra.ai') {
       return callback(null, true);
     }
+
+    // Render deployment
+    if (/\.onrender\.com$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Vercel deployment
+    if (/\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
     
     callback(new Error('Not allowed by CORS'));
   },
@@ -51,10 +64,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Tenant detection middleware (before routes)
-app.use(tenantMiddleware);
-
-// Health check route
+// Health check route (before tenant middleware - no DB needed)
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -63,11 +73,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Tenant detection middleware (before routes)
+app.use(tenantMiddleware);
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api/leave', leaveRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -98,6 +113,9 @@ const server = app.listen(PORT, () => {
 ║   Database: MongoDB                                   ║
 ╚═══════════════════════════════════════════════════════╝
   `);
+
+  // Start scheduled jobs
+  startAutoCheckoutJob();
 });
 
 // Handle unhandled promise rejections

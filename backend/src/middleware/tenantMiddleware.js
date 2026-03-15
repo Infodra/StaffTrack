@@ -22,18 +22,35 @@ const tenantMiddleware = async (req, res, next) => {
 
     // Skip tenant detection for localhost and development
     if (host.includes('localhost') || host.includes('127.0.0.1')) {
-      // In development, look for company_id in headers or use default
-      const devCompanyId = req.headers['x-company-id'] || 'TECHINFO';
-      
-      const company = await Company.findOne({ 
-        company_id: devCompanyId.toUpperCase() 
-      });
-
-      if (company) {
-        req.company = company;
-        req.tenant = devCompanyId.toLowerCase();
+      // Support subdomain.localhost (e.g., tecinfo.localhost:5000)
+      const hostWithoutPort = host.split(':')[0];
+      if (hostWithoutPort.endsWith('.localhost')) {
+        const subdomain = hostWithoutPort.split('.')[0];
+        const company = await Company.findOne({
+          company_id: subdomain.toUpperCase()
+        });
+        if (company) {
+          req.company = company;
+          req.tenant = subdomain.toLowerCase();
+        }
+        return next();
       }
+
+      // In development, look for company_id in headers or use default
+      const devCompanyId = req.headers['x-company-id'];
       
+      if (devCompanyId) {
+        const company = await Company.findOne({ 
+          company_id: devCompanyId.toUpperCase() 
+        });
+
+        if (company) {
+          req.company = company;
+          req.tenant = devCompanyId.toLowerCase();
+        }
+      }
+      // If no X-Company-ID header, allow request without tenant
+      // (super admin requests don't need tenant context)
       return next();
     }
 

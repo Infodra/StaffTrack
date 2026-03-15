@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Force IPv4 DNS resolution to fix SRV lookup issues on Windows
+dns.setDefaultResultOrder('ipv4first');
 
 const connectDB = async () => {
   try {

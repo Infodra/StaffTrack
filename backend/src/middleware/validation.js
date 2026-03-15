@@ -101,7 +101,7 @@ const createEmployeeValidation = [
     .withMessage('Password must be at least 6 characters'),
   body('role')
     .optional()
-    .isIn(['admin', 'employee'])
+    .isIn(['super_admin', 'admin', 'employee'])
     .withMessage('Invalid role'),
   body('department')
     .optional()
@@ -147,7 +147,7 @@ const updateEmployeeValidation = [
     .normalizeEmail(),
   body('role')
     .optional()
-    .isIn(['admin', 'employee'])
+    .isIn(['super_admin', 'admin', 'employee'])
     .withMessage('Invalid role'),
   body('department')
     .optional()
@@ -223,6 +223,52 @@ const updateCompanyValidation = [
   validate
 ];
 
+/**
+ * Validation rules for super admin creating a company
+ */
+const createCompanyBySuperAdminValidation = [
+  body('company_name')
+    .notEmpty()
+    .withMessage('Company name is required')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Company name must be between 2 and 100 characters'),
+  body('admin_email')
+    .notEmpty()
+    .withMessage('Admin email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email')
+    .normalizeEmail(),
+  body('admin_password')
+    .notEmpty()
+    .withMessage('Admin password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters'),
+  body('admin_name')
+    .notEmpty()
+    .withMessage('Admin name is required')
+    .trim(),
+  body('office_latitude')
+    .notEmpty()
+    .withMessage('Office latitude is required')
+    .isFloat({ min: -90, max: 90 })
+    .withMessage('Invalid latitude'),
+  body('office_longitude')
+    .notEmpty()
+    .withMessage('Office longitude is required')
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('Invalid longitude'),
+  body('employee_limit')
+    .optional()
+    .isInt({ min: 1, max: 10000 })
+    .withMessage('Employee limit must be between 1 and 10000'),
+  body('license_type')
+    .optional()
+    .isIn(['lifetime', 'annual', 'monthly'])
+    .withMessage('Invalid license type'),
+  validate
+];
+
 module.exports = {
   registerCompanyValidation,
   loginValidation,
@@ -230,5 +276,6 @@ module.exports = {
   updateEmployeeValidation,
   attendanceLocationValidation,
   attendanceHistoryValidation,
-  updateCompanyValidation
+  updateCompanyValidation,
+  createCompanyBySuperAdminValidation
 };

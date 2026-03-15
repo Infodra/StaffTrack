@@ -59,9 +59,9 @@ attendanceSchema.index(
 
 // Calculate working hours before saving
 attendanceSchema.pre('save', function(next) {
-  if (this.check_in && this.check_in.time && this.check_out && this.check_out.time) {
-    const diff = this.check_out.time - this.check_in.time;
-    this.working_hours = Math.round((diff / (1000 * 60 * 60)) * 100) / 100; // Hours with 2 decimal places
+  if (this.check_in && this.check_out) {
+    const diff = this.check_out - this.check_in;
+    this.working_hours = Math.round((diff / (1000 * 60 * 60)) * 100) / 100;
   }
   next();
 });

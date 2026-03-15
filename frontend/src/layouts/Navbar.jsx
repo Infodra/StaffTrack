@@ -7,20 +7,27 @@ import {
   LogOut, 
   Menu, 
   X,
-  MapPin
+  MapPin,
+  CalendarDays,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getTenantFromHostname, getCompanyDisplayName } from '../utils/helpers';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, company, logout, isAdmin } = useAuth();
+  const { user, company, logout, isAdmin, isSuperAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    const role = user?.role;
     logout();
-    navigate('/login');
+    if (role === 'super_admin') {
+      window.location.href = '/login?mode=super';
+    } else {
+      navigate('/login');
+    }
   };
 
   // Get company name from stored data or tenant subdomain
@@ -37,15 +44,25 @@ const Navbar = () => {
     return 'StaffTrack';
   };
 
-  const navItems = isAdmin() 
+  const navItems = isSuperAdmin()
+    ? [
+        { name: 'Platform', path: '/super-admin/dashboard', icon: Building2 },
+        { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+        { name: 'Employees', path: '/admin/employees', icon: Users },
+        { name: 'Attendance', path: '/admin/attendance', icon: Calendar },
+        { name: 'Leave', path: '/admin/leave', icon: CalendarDays },
+      ]
+    : isAdmin() 
     ? [
         { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
         { name: 'Employees', path: '/admin/employees', icon: Users },
         { name: 'Attendance', path: '/admin/attendance', icon: Calendar },
+        { name: 'Leave', path: '/admin/leave', icon: CalendarDays },
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Attendance', path: '/dashboard/attendance', icon: Calendar },
+        { name: 'Leave', path: '/dashboard/leave', icon: CalendarDays },
       ];
 
   return (
@@ -55,8 +72,10 @@ const Navbar = () => {
           {/* Logo and Desktop Navigation */}
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <MapPin className="text-primary-600" size={28} />
-              <span className="ml-2 text-xl font-bold text-gray-900">{getCompanyName()}</span>
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 rounded-lg shadow-sm">
+                <MapPin className="text-white" size={22} />
+              </div>
+              <span className="ml-2 text-xl font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">{getCompanyName()}</span>
             </div>
             
             <div className="hidden sm:ml-8 sm:flex sm:space-x-4">

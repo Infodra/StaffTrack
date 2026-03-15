@@ -106,7 +106,7 @@ const LeaveManagement = () => {
     const labels = {
       sick: 'Sick Leave',
       casual: 'Casual Leave',
-      annual: 'Annual Leave',
+      annual: 'Privilege Leave',
       permission: 'Permission',
       other: 'Other'
     };
@@ -229,7 +229,7 @@ const LeaveManagement = () => {
               >
                 <option value="casual">Casual Leave</option>
                 <option value="sick">Sick Leave</option>
-                <option value="annual">Annual Leave</option>
+                <option value="annual">Privilege Leave</option>
                 <option value="permission">Permission</option>
                 <option value="other">Other</option>
               </select>

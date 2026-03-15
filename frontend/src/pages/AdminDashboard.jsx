@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Users, UserCheck, UserX, Clock, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, UserCheck, UserX, Clock, Calendar, CheckCircle, XCircle, MapPin, LogIn, LogOut, Bell, AlertTriangle } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card';
 import { Loading } from '../components/Loading';
 import { Badge } from '../components/Badge';
-import { companyService, attendanceService, employeeService } from '../services/apiService';
+import { companyService, attendanceService, employeeService, leaveService } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
-import { getGreeting, formatTime, formatDate } from '../utils/helpers';
+import { getGreeting, formatTime, formatDate, getCompanyLogo } from '../utils/helpers';
 
 const AdminDashboard = () => {
   const { user, company } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [recentReport, setRecentReport] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [todayAttendance, setTodayAttendance] = useState([]);
+  const [pendingLeaves, setPendingLeaves] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -28,34 +30,31 @@ const AdminDashboard = () => {
       setLoading(true);
       
       const today = new Date().toISOString().split('T')[0];
-      const [statsResponse, reportResponse, employeesResponse, attendanceResponse] = await Promise.all([
+      const [statsResponse, employeesResponse, historyResponse, leavesResponse] = await Promise.all([
         companyService.getStats(),
-        attendanceService.getReport({ 
-          startDate: today,
-          endDate: today
-        }),
-        employeeService.getAll(),
-        attendanceService.getReport({ 
+        employeeService.getEmployees(),
+        attendanceService.getHistory({
           startDate: today,
           endDate: today,
-          detailed: true
-        })
+          limit: 100
+        }),
+        leaveService.getLeaveRequests({ status: 'pending' })
       ]);
 
       if (statsResponse.success) {
         setStats(statsResponse.data);
       }
 
-      if (reportResponse.success) {
-        setRecentReport(reportResponse.data);
-      }
-
       if (employeesResponse.success) {
         setEmployees(employeesResponse.data.employees || []);
       }
 
-      if (attendanceResponse.success) {
-        setTodayAttendance(attendanceResponse.data.report || []);
+      if (historyResponse.success) {
+        setTodayAttendance(historyResponse.data.records || []);
+      }
+
+      if (leavesResponse.success) {
+        setPendingLeaves(leavesResponse.data.leaves || leavesResponse.data || []);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -79,10 +78,10 @@ const AdminDashboard = () => {
       {/* Header with Time and Logo */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800">
             {getGreeting()}, {user?.name}! 👋
           </h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Here's what's happening with your team today</p>
+          <p className="text-indigo-500 font-medium mt-1 text-sm sm:text-base">Here's what's happening with your team today</p>
         </div>
         
         <div className="flex items-center gap-4">
@@ -98,7 +97,7 @@ const AdminDashboard = () => {
           
           {/* Company Logo */}
           <img 
-            src="/logos/Tecinfo-logo.png" 
+            src={company?.name ? (getCompanyLogo(company.name) || '/logos/infodra.png') : '/logos/infodra.png'}
             alt={company?.name || 'Company Logo'}
             className="h-12 sm:h-16 w-auto object-contain"
             onError={(e) => {
@@ -163,14 +162,69 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
-      {/* Employees Attendance Table */}
+      {/* Pending Leave Requests Notification */}
+      {pendingLeaves.length > 0 && (
+        <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 shadow-lg animate-pulse-slow">
+          <div className="flex items-start gap-4 p-1">
+            <div className="bg-amber-500 rounded-2xl p-3 flex-shrink-0">
+              <Bell size={28} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={18} className="text-amber-600" />
+                <h3 className="text-lg font-bold text-amber-800">
+                  {pendingLeaves.length} Leave Request{pendingLeaves.length > 1 ? 's' : ''} Pending
+                </h3>
+              </div>
+              <div className="space-y-2 mb-3">
+                {pendingLeaves.slice(0, 5).map((leave) => {
+                  const typeLabels = { sick: 'Sick Leave', casual: 'Casual Leave', annual: 'Privilege Leave', permission: 'Permission', other: 'Other' };
+                  return (
+                    <div key={leave._id} className="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 font-bold text-sm">
+                          {(leave.employee_id?.name || leave.employee_name || '?').charAt(0)}
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-800">{leave.employee_id?.name || leave.employee_name || 'Employee'}</span>
+                          <span className="text-gray-500 ml-2 text-sm">— {typeLabels[leave.leave_type] || leave.leave_type}</span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {new Date(leave.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {leave.start_date !== leave.end_date && (
+                          <span> – {new Date(leave.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {pendingLeaves.length > 5 && (
+                  <p className="text-sm text-amber-700 pl-2">+ {pendingLeaves.length - 5} more request{pendingLeaves.length - 5 > 1 ? 's' : ''}</p>
+                )}
+              </div>
+              <button
+                onClick={() => navigate('/admin/leave')}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Review Leave Requests
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Employee Attendance Details Table */}
       <Card className="shadow-lg border border-gray-200">
         <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center gap-2">
               <Users className="text-gray-700" size={24} />
-              Employees ({employees.length})
+              Employee Attendance ({employees.length})
             </CardTitle>
+            <Badge status="active" className="text-sm">
+              {formatDate(new Date())}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -178,44 +232,89 @@ const AdminDashboard = () => {
             <table className="w-full">
               <thead className="bg-white border-b-2 border-gray-200">
                 <tr>
-                  <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                  <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                  <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
-                  <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
-                  <th className="text-center py-3 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Office Location</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Login Time</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Logout Time</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Working Hours</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {employees.map((employee) => {
-                  const attendance = todayAttendance.find(att => att.employee_id === employee._id);
-                  const isCheckedIn = attendance && attendance.present_days > 0;
+                  const attendance = todayAttendance.find(att => {
+                    const attEmpId = att.employee_id?.employee_id || att.employee_id;
+                    return attEmpId === employee.employee_id;
+                  });
+                  
+                  const checkIn = attendance?.check_in ? new Date(attendance.check_in) : null;
+                  const checkOut = attendance?.check_out ? new Date(attendance.check_out) : null;
+                  const isCheckedIn = !!checkIn;
+                  const isCheckedOut = !!checkOut;
                   
                   return (
-                    <tr key={employee._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-6 text-center">
+                    <tr key={employee._id} className={`hover:bg-gray-50 transition-colors ${!isCheckedIn ? 'bg-red-50/30' : ''}`}>
+                      <td className="py-4 px-4">
                         <div className="font-medium text-gray-900">{employee.name}</div>
+                        <div className="text-xs text-gray-500">{employee.department || 'General'}</div>
                       </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="text-sm text-blue-600">{employee.email}</div>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-1 text-sm text-gray-700">
+                          <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                          {employee.location_name || 'Not Set'}
+                        </div>
                       </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="text-sm text-gray-700">{employee.department || 'General'}</div>
+                      <td className="py-4 px-4 text-center">
+                        <div className="text-sm text-gray-700">
+                          {attendance?.date || new Date().toISOString().split('T')[0]}
+                        </div>
                       </td>
-                      <td className="py-4 px-6 text-center">
-                        <Badge 
-                          status={employee.role === 'admin' ? 'warning' : 'info'}
-                          className="text-xs"
-                        >
-                          {employee.role}
-                        </Badge>
+                      <td className="py-4 px-4 text-center">
+                        {checkIn ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <LogIn size={14} className="text-green-500" />
+                            <span className="text-sm font-medium text-green-700">
+                              {checkIn.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
                       </td>
-                      <td className="py-4 px-6 text-center">
-                        <Badge 
-                          status={employee.status === 'active' ? 'active' : 'inactive'}
-                          className="text-xs"
-                        >
-                          {employee.status}
-                        </Badge>
+                      <td className="py-4 px-4 text-center">
+                        {checkOut ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <LogOut size={14} className="text-blue-500" />
+                            <span className="text-sm font-medium text-blue-700">
+                              {checkOut.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ) : isCheckedIn ? (
+                          <span className="text-xs text-orange-500 font-medium">Working...</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {attendance?.working_hours ? (
+                          <span className="text-sm font-medium text-gray-700">
+                            {attendance.working_hours.toFixed(1)} hrs
+                          </span>
+                        ) : isCheckedIn ? (
+                          <span className="text-xs text-orange-500">In progress</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {isCheckedOut ? (
+                          <Badge status="info" className="text-xs">Completed</Badge>
+                        ) : isCheckedIn ? (
+                          <Badge status="active" className="text-xs">In Office</Badge>
+                        ) : (
+                          <Badge status="inactive" className="text-xs">Absent</Badge>
+                        )}
                       </td>
                     </tr>
                   );

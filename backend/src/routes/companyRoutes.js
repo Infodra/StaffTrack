@@ -3,12 +3,16 @@ const router = express.Router();
 const {
   getCompany,
   updateCompanySettings,
-  getCompanyStats
+  getCompanyStats,
+  getCompanyBranding
 } = require('../controllers/companyController');
 const { protect, authorize } = require('../middleware/auth');
 const { updateCompanyValidation } = require('../middleware/validation');
 
-// All routes require authentication
+// Public route - no auth needed (for login page branding)
+router.get('/branding/:tenantId', getCompanyBranding);
+
+// All routes below require authentication
 router.use(protect);
 
 // Get company details

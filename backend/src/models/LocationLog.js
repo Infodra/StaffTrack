@@ -23,7 +23,7 @@ const locationLogSchema = new mongoose.Schema({
   },
   accuracy: {
     type: Number,
-    required: [true, 'GPS accuracy is required']
+    default: null
   },
   timestamp: {
     type: Date,

@@ -132,11 +132,20 @@ const login = async (req, res, next) => {
     let query = { email };
     
     // If req.company exists (from tenant middleware), enforce company isolation
+    // But allow super_admin users to login without company context
     if (req.company) {
       query.company_id = req.company.company_id;
     }
 
-    const employee = await Employee.findOne(query).select('+password');
+    let employee = await Employee.findOne(query).select('+password');
+
+    // If not found with company filter, try without (for super_admin login on localhost)
+    if (!employee && req.company) {
+      const unscoped = await Employee.findOne({ email }).select('+password');
+      if (unscoped && unscoped.role === 'super_admin') {
+        employee = unscoped;
+      }
+    }
 
     if (!employee) {
       return errorResponse(res, 401, 'Invalid email or password');
@@ -165,8 +174,8 @@ const login = async (req, res, next) => {
       return errorResponse(res, 403, 'Company account is not active');
     }
 
-    // Verify tenant match (extra security)
-    if (req.tenant && req.tenant !== employee.company_id.toLowerCase()) {
+    // Verify tenant match (extra security) - skip for super_admin
+    if (req.tenant && employee.role !== 'super_admin' && req.tenant !== employee.company_id.toLowerCase()) {
       return errorResponse(res, 403, 'Access denied: Company mismatch');
     }
 

@@ -7,9 +7,12 @@ const LoginCard = ({ onLogin, loading, todayStatus }) => {
   const [locationStatus, setLocationStatus] = useState(null);
   const [gpsAccuracy, setGpsAccuracy] = useState(null);
 
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleLogin = async () => {
     setLocationStatus('checking');
     setGpsAccuracy(null);
+    setErrorMessage('');
 
     // Get location first
     if (navigator.geolocation) {
@@ -23,17 +26,20 @@ const LoginCard = ({ onLogin, loading, todayStatus }) => {
           
           // Set location status based on result
           if (result.success) {
-            if (result.data?.locationVerified !== false) {
-              setLocationStatus('inside');
-            } else {
-              setLocationStatus('outside');
-            }
+            setLocationStatus('inside');
           } else {
-            setLocationStatus('error');
+            const msg = result.message || '';
+            setErrorMessage(msg);
+            if (msg.toLowerCase().includes('away from') || msg.toLowerCase().includes('outside') || msg.toLowerCase().includes('geofence')) {
+              setLocationStatus('outside');
+            } else {
+              setLocationStatus('error');
+            }
           }
         },
         (error) => {
           setLocationStatus('error');
+          setErrorMessage('Could not access GPS. Please enable location services.');
           onLogin(null);
         },
         {
@@ -85,13 +91,13 @@ const LoginCard = ({ onLogin, loading, todayStatus }) => {
             {locationStatus === 'outside' && (
               <>
                 <XCircle className="text-red-600" size={24} />
-                <span className="text-red-800 font-medium">✖ Outside Allowed Area</span>
+                <span className="text-red-800 font-medium">{errorMessage || 'Outside Allowed Area'}</span>
               </>
             )}
             {locationStatus === 'error' && (
               <>
                 <XCircle className="text-yellow-600" size={24} />
-                <span className="text-yellow-800 font-medium">Unable to verify location</span>
+                <span className="text-yellow-800 font-medium">{errorMessage || 'Unable to verify location'}</span>
               </>
             )}
           </div>

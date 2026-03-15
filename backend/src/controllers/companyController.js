@@ -106,8 +106,7 @@ const getCompanyStats = async (req, res, next) => {
     ]);
 
     // Get today's attendance
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD string
 
     const Attendance = require('../models/Attendance');
     const [checkedInToday, checkedOutToday] = await Promise.all([
@@ -118,7 +117,7 @@ const getCompanyStats = async (req, res, next) => {
       Attendance.countDocuments({
         company_id: company.company_id,
         date: today,
-        'check_out.time': { $exists: true }
+        check_out: { $ne: null }
       })
     ]);
 
@@ -145,8 +144,36 @@ const getCompanyStats = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get company branding (logo, name) - Public endpoint for login page
+ * @route   GET /api/company/branding/:tenantId
+ * @access  Public
+ */
+const getCompanyBranding = async (req, res, next) => {
+  try {
+    const { tenantId } = req.params;
+
+    const company = await Company.findOne({
+      company_id: tenantId.toUpperCase()
+    }).select('company_name logo domain');
+
+    if (!company) {
+      return errorResponse(res, 404, 'Company not found');
+    }
+
+    successResponse(res, 200, {
+      name: company.company_name,
+      logo: company.logo || null,
+      domain: company.domain
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCompany,
   updateCompanySettings,
-  getCompanyStats
+  getCompanyStats,
+  getCompanyBranding
 };

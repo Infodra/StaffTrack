@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Check, X, Clock, Filter } from 'lucide-react';
+import { Calendar, Check, X, Clock, Filter, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -18,6 +18,29 @@ const AdminLeaveManagement = () => {
   const [actionType, setActionType] = useState('');
   const [adminRemarks, setAdminRemarks] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const params = {};
+      if (filterStatus !== 'all') params.status = filterStatus;
+      const response = await leaveService.exportExcel(params);
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'leave_report.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Failed to export leave data. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     fetchLeaveData();
@@ -100,7 +123,7 @@ const AdminLeaveManagement = () => {
     const labels = {
       sick: 'Sick Leave',
       casual: 'Casual Leave',
-      annual: 'Annual Leave',
+      annual: 'Privilege Leave',
       permission: 'Permission',
       other: 'Other'
     };
@@ -123,9 +146,19 @@ const AdminLeaveManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
-        <p className="text-gray-600 mt-2">Review and manage employee leave requests</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
+          <p className="text-gray-600 mt-2">Review and manage employee leave requests</p>
+        </div>
+        <Button
+          onClick={handleExportExcel}
+          disabled={exporting}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+        >
+          <Download size={16} />
+          {exporting ? 'Exporting...' : 'Export Excel'}
+        </Button>
       </div>
 
       {/* Statistics Cards */}

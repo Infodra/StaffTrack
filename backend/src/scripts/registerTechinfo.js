@@ -1,6 +1,6 @@
 /**
- * Register Techinfo Company
- * Creates company and admin account for Techinfo
+ * Register Tecinfo Company
+ * Creates company and admin account for Tecinfo
  */
 
 const mongoose = require('mongoose');
@@ -11,13 +11,13 @@ require('dotenv').config();
 const Company = require('../models/Company');
 const Employee = require('../models/Employee');
 
-// Techinfo Company Configuration
+// Tecinfo Company Configuration
 const COMPANY_DATA = {
   company_id: 'TEC001',
-  company_name: 'Techinfo',
+  company_name: 'Tecinfo',
   admin_email: 'info@tecinfoes.com',
   admin_password: 'Admin123',
-  admin_name: 'Techinfo Admin',
+  admin_name: 'Tecinfo Admin',
   employee_limit: 50,
   license_type: 'lifetime',
   department: 'Management'
@@ -25,7 +25,7 @@ const COMPANY_DATA = {
 
 // Admin Location (Update these with actual coordinates)
 const ADMIN_LOCATION = {
-  location_name: 'Techinfo Office',
+  location_name: 'Tecinfo Office',
   latitude: 13.0827,  // Update with actual coordinates
   longitude: 80.2707, // Update with actual coordinates
   radius_meters: 150
@@ -47,10 +47,10 @@ const connectDB = async () => {
   }
 };
 
-// Register Techinfo Company
-const registerTechinfoCompany = async () => {
+// Register Tecinfo Company
+const registerTecinfoCompany = async () => {
   try {
-    console.log('\n🏢 Registering Techinfo Company...\n');
+    console.log('\n🏢 Registering Tecinfo Company...\n');
     
     // Check if company already exists
     const existingCompany = await Company.findOne({ 
@@ -85,7 +85,12 @@ const registerTechinfoCompany = async () => {
       admin_email: COMPANY_DATA.admin_email,
       employee_limit: COMPANY_DATA.employee_limit,
       license_type: COMPANY_DATA.license_type,
-      status: 'active'
+      status: 'active',
+      office_location: {
+        latitude: ADMIN_LOCATION.latitude,
+        longitude: ADMIN_LOCATION.longitude
+      },
+      geofence_radius: ADMIN_LOCATION.radius_meters
     });
     
     console.log('✅ Company Created Successfully!');
@@ -97,15 +102,13 @@ const registerTechinfoCompany = async () => {
     // Create Admin Employee
     console.log('\n👤 Creating Admin Account...');
     
-    // Hash password
-    const hashedPassword = await bcrypt.hash(COMPANY_DATA.admin_password, 10);
-    
+    // Let the Mongoose pre-save hook handle password hashing
     const admin = await Employee.create({
       employee_id: 'EMP001',
       company_id: COMPANY_DATA.company_id,
       name: COMPANY_DATA.admin_name,
       email: COMPANY_DATA.admin_email,
-      password: hashedPassword,
+      password: COMPANY_DATA.admin_password,
       role: 'admin',
       department: COMPANY_DATA.department,
       status: 'active',
@@ -125,7 +128,7 @@ const registerTechinfoCompany = async () => {
     console.log('   Geofence:', `${admin.latitude}, ${admin.longitude} (${admin.radius_meters}m)`);
 
     console.log('\n' + '═'.repeat(60));
-    console.log('🎉 TECHINFO COMPANY REGISTERED SUCCESSFULLY!');
+    console.log('🎉 TECINFO COMPANY REGISTERED SUCCESSFULLY!');
     console.log('═'.repeat(60));
     
     console.log('\n🔑 ADMIN LOGIN CREDENTIALS:');
@@ -168,10 +171,10 @@ const registerTechinfoCompany = async () => {
 // Main function
 const main = async () => {
   try {
-    console.log('🚀 Techinfo Company Registration Script\n');
+    console.log('🚀 Tecinfo Company Registration Script\n');
     
     await connectDB();
-    await registerTechinfoCompany();
+    await registerTecinfoCompany();
     
     process.exit(0);
   } catch (error) {

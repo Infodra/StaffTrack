@@ -10,64 +10,68 @@ const { checkGeofence, validateCoordinates } = require('./gpsService');
  * @param {Number} longitude - Login longitude
  * @returns {Object} Attendance record
  */
-const processLogin = async (employee, company, latitude, longitude) => {
+const processLogin = async (employee, company, latitude, longitude, accuracy) => {
   // Validate coordinates
   if (!validateCoordinates(latitude, longitude)) {
     throw new Error('Invalid GPS coordinates');
   }
 
+  // Use employee-level geofence if available, otherwise fall back to company
+  const officeLat = employee.latitude || company.office_location.latitude;
+  const officeLon = employee.longitude || company.office_location.longitude;
+  const radius = employee.radius_meters || company.geofence_radius || 150;
+
   // Check geofence
   const geofenceResult = checkGeofence(
     latitude,
     longitude,
-    company.office_location.latitude,
-    company.office_location.longitude,
-    company.geofence_radius
+    officeLat,
+    officeLon,
+    radius
   );
 
   if (!geofenceResult.isWithinGeofence) {
     throw new Error(
-      `You are ${geofenceResult.distance}m away from the office. Please move within ${company.geofence_radius}m radius to login.`
+      `You are ${geofenceResult.distance}m away from the office. Please move within ${radius}m radius to login.`
     );
   }
 
-  // Get today's date (start of day)
+  // Get today's date as string (YYYY-MM-DD)
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const dateStr = today.toISOString().split('T')[0];
 
   // Check if already logged in today
   const existingAttendance = await Attendance.findOne({
-    company_id: company._id,
-    employee_id: employee._id,
-    date: today
+    company_id: employee.company_id,
+    employee_id: employee.employee_id,
+    date: dateStr
   });
 
   if (existingAttendance) {
     throw new Error('You have already logged in today');
   }
 
+  // Generate attendance ID
+  const attendanceId = `${employee.company_id}-${employee.employee_id}-${dateStr}`;
+
   // Create attendance record
   const attendance = await Attendance.create({
-    company_id: company._id,
-    employee_id: employee._id,
-    date: today,
-    check_in: {
-      time: new Date(),
-      location: {
-        latitude,
-        longitude
-      }
-    },
+    attendance_id: attendanceId,
+    company_id: employee.company_id,
+    employee_id: employee.employee_id,
+    date: dateStr,
+    check_in: new Date(),
     status: 'present'
   });
 
   // Log location
   await LocationLog.create({
-    employee_id: employee._id,
+    company_id: employee.company_id,
+    employee_id: employee.employee_id,
     timestamp: new Date(),
     latitude,
     longitude,
-    action: 'login'
+    accuracy: accuracy || null
   });
 
   return attendance;
@@ -81,64 +85,64 @@ const processLogin = async (employee, company, latitude, longitude) => {
  * @param {Number} longitude - Logout longitude
  * @returns {Object} Updated attendance record
  */
-const processLogout = async (employee, company, latitude, longitude) => {
+const processLogout = async (employee, company, latitude, longitude, accuracy) => {
   // Validate coordinates
   if (!validateCoordinates(latitude, longitude)) {
     throw new Error('Invalid GPS coordinates');
   }
 
+  // Use employee-level geofence if available, otherwise fall back to company
+  const officeLat = employee.latitude || company.office_location.latitude;
+  const officeLon = employee.longitude || company.office_location.longitude;
+  const radius = employee.radius_meters || company.geofence_radius || 150;
+
   // Check geofence
   const geofenceResult = checkGeofence(
     latitude,
     longitude,
-    company.office_location.latitude,
-    company.office_location.longitude,
-    company.geofence_radius
+    officeLat,
+    officeLon,
+    radius
   );
 
   if (!geofenceResult.isWithinGeofence) {
     throw new Error(
-      `You are ${geofenceResult.distance}m away from the office. Please move within ${company.geofence_radius}m radius to logout.`
+      `You are ${geofenceResult.distance}m away from the office. Please move within ${radius}m radius to logout.`
     );
   }
 
-  // Get today's date (start of day)
+  // Get today's date as string (YYYY-MM-DD)
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const dateStr = today.toISOString().split('T')[0];
 
   // Find today's attendance
   const attendance = await Attendance.findOne({
-    company_id: company._id,
-    employee_id: employee._id,
-    date: today
+    company_id: employee.company_id,
+    employee_id: employee.employee_id,
+    date: dateStr
   });
 
   if (!attendance) {
     throw new Error('No login record found for today. Please login first.');
   }
 
-  if (attendance.check_out && attendance.check_out.time) {
+  if (attendance.check_out) {
     throw new Error('You have already logged out today');
   }
 
   // Update attendance with logout
-  attendance.check_out = {
-    time: new Date(),
-    location: {
-      latitude,
-      longitude
-    }
-  };
+  attendance.check_out = new Date();
 
   await attendance.save();
 
   // Log location
   await LocationLog.create({
-    employee_id: employee._id,
+    company_id: employee.company_id,
+    employee_id: employee.employee_id,
     timestamp: new Date(),
     latitude,
     longitude,
-    action: 'logout'
+    accuracy: accuracy || null
   });
 
   return attendance;
@@ -156,9 +160,12 @@ const processLogout = async (employee, company, latitude, longitude) => {
  */
 const getAttendanceHistory = async (companyId, employeeId, startDate, endDate, page = 1, limit = 30) => {
   const query = {
-    company_id: companyId,
-    employee_id: employeeId
+    company_id: companyId
   };
+
+  if (employeeId) {
+    query.employee_id = employeeId;
+  }
 
   // Add date range filter if provided
   if (startDate || endDate) {
@@ -178,7 +185,6 @@ const getAttendanceHistory = async (companyId, employeeId, startDate, endDate, p
       .sort({ date: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('employee_id', 'name email department')
       .lean(),
     Attendance.countDocuments(query)
   ]);

@@ -10,18 +10,19 @@ export const useAttendance = () => {
   const [error, setError] = useState(null);
   const { getLocation } = useGeolocation();
 
-  const login = useCallback(async () => {
+  const login = useCallback(async (coords) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Get GPS location
-      const location = await getLocation();
+      // Use provided coordinates or fetch GPS location
+      const location = coords || await getLocation();
 
       // Send login request
       const response = await attendanceService.login(
         location.latitude,
-        location.longitude
+        location.longitude,
+        location.accuracy
       );
 
       setLoading(false);
@@ -34,18 +35,19 @@ export const useAttendance = () => {
     }
   }, [getLocation]);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (coords) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Get GPS location
-      const location = await getLocation();
+      // Use provided coordinates or fetch GPS location
+      const location = coords || await getLocation();
 
       // Send logout request
       const response = await attendanceService.logout(
         location.latitude,
-        location.longitude
+        location.longitude,
+        location.accuracy
       );
 
       setLoading(false);

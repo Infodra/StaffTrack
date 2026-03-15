@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/Form';
 import { Button } from '../components/Button';
 import { Alert } from '../components/Alert';
-import { getTenantFromHostname, getCompanyDisplayName } from '../utils/helpers';
+import { getTenantFromHostname, getCompanyBranding } from '../utils/helpers';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,13 +18,40 @@ const Login = () => {
   
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isSuperMode = searchParams.get('mode') === 'super';
 
-  // Get company name from tenant subdomain
+  // Get branding based on tenant subdomain
   const tenant = getTenantFromHostname();
-  const companyName = tenant ? getCompanyDisplayName(tenant) : 'StaffTrack';
+  const [branding, setBranding] = useState(
+    isSuperMode
+      ? { name: 'StaffTrack', subtitle: 'by Infodra Technologies', logo: '/logos/infodra.png', tagline: 'Super Admin Login' }
+      : getCompanyBranding(tenant)
+  );
+
+  // Fetch company branding from API if tenant exists
+  useEffect(() => {
+    if (tenant) {
+      axios.get(`${API_BASE_URL}/company/branding/${tenant}`)
+        .then(res => {
+          if (res.data?.success && res.data.data) {
+            const data = res.data.data;
+            setBranding(prev => ({
+              ...prev,
+              name: data.name || prev.name,
+              logo: data.logo || prev.logo,
+            }));
+          }
+        })
+        .catch(() => {
+          // Keep fallback branding from helpers
+        });
+    }
+  }, [tenant]);
 
   // Redirect if already logged in
   if (user) {
+    if (user.role === 'super_admin') return <Navigate to="/super-admin/dashboard" replace />;
     return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
   }
 
@@ -41,20 +71,13 @@ const Login = () => {
     setLoading(false);
     
     if (result.success) {
-      const redirectPath = result.user.role === 'admin' ? '/admin/dashboard' : '/dashboard';
+      let redirectPath = '/dashboard';
+      if (result.user.role === 'super_admin') redirectPath = '/super-admin/dashboard';
+      else if (result.user.role === 'admin') redirectPath = '/admin/dashboard';
       navigate(redirectPath);
     } else {
       setError(result.message || 'Login failed. Please try again.');
     }
-  };
-
-  // Get logo based on tenant
-  const getCompanyLogo = () => {
-    if (tenant === 'tecinfo') {
-      return '/logos/Tecinfo-logo.png';
-    }
-    // Default logo for other companies
-    return '/logos/tecinfo.png';
   };
 
   return (
@@ -63,23 +86,24 @@ const Login = () => {
         {/* Logo and Title */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img 
-              src={getCompanyLogo()} 
-              alt={`${companyName} Logo`}
-              className="h-20 w-auto object-contain"
-              onError={(e) => {
-                // Fallback to icon if logo not found
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="bg-primary-600 p-3 rounded-xl hidden">
+            {branding.logo ? (
+              <img 
+                src={branding.logo} 
+                alt={`${branding.name} Logo`}
+                className="h-20 w-auto object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div className={`bg-primary-600 p-3 rounded-xl ${branding.logo ? 'hidden' : 'flex'}`}>
               <MapPin className="text-white" size={28} />
             </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{companyName}</h1>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">Employee Attendance System</p>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">Sign in to access your dashboard</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">{branding.name}</h1>
+          <p className="text-sm sm:text-base text-indigo-500 font-semibold">{branding.subtitle}</p>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">{branding.tagline}</p>
         </div>
 
         {/* Login Form */}
@@ -116,12 +140,6 @@ const Login = () => {
               Sign In
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Demo Credentials:</p>
-            <p className="mt-1">Admin: admin@company.com</p>
-            <p>Employee: employee@company.com</p>
-          </div>
         </div>
 
         <p className="text-center text-sm text-gray-600 mt-6">

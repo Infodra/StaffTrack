@@ -1,8 +1,8 @@
-# Techinfo Company - Quick Setup Guide
+# Tecinfo Company - Quick Setup Guide
 
 ## 🏢 Company Details
 
-**Company Name:** Techinfo  
+**Company Name:** Tecinfo  
 **Company ID:** TEC001  
 **License Type:** Lifetime  
 **Employee Limit:** 50
@@ -26,7 +26,7 @@ The admin account is configured with a default location:
 
 | Field | Current Value | Action Required |
 |-------|---------------|-----------------|
-| Location Name | Techinfo Office | ✅ OK (can update) |
+| Location Name | Tecinfo Office | ✅ OK (can update) |
 | Latitude | 13.0827 | ⚠️ UPDATE with actual coordinates |
 | Longitude | 80.2707 | ⚠️ UPDATE with actual coordinates |
 | Geofence Radius | 150 meters | ✅ OK (can adjust) |
@@ -35,19 +35,19 @@ The admin account is configured with a default location:
 
 1. **Google Maps Method:**
    - Go to https://www.google.com/maps
-   - Search for "Techinfo" or your office address
+   - Search for "Tecinfo" or your office address
    - Right-click on your exact office location
    - Click on the coordinates (they will be copied)
    - Example: `13.0827, 80.2707`
 
 2. **Update in Script:**
-   - Open: `backend/src/scripts/registerTechinfo.js`
+   - Open: `backend/src/scripts/registerTecinfo.js`
    - Find the `ADMIN_LOCATION` section (around line 21)
    - Replace latitude and longitude values
 
 ---
 
-## 🚀 How to Register Techinfo Company
+## 🚀 How to Register Tecinfo Company
 
 ### Step 1: Fix MongoDB Connection (If Not Done)
 
@@ -62,7 +62,7 @@ Open terminal and run:
 
 ```bash
 cd backend
-node src/scripts/registerTechinfo.js
+node src/scripts/registerTecinfo.js
 ```
 
 **Expected Output:**
@@ -73,7 +73,7 @@ node src/scripts/registerTechinfo.js
 👤 Creating Admin Account...
 ✅ Admin Account Created Successfully!
 
-🎉 TECHINFO COMPANY REGISTERED SUCCESSFULLY!
+🎉 TECINFO COMPANY REGISTERED SUCCESSFULLY!
 
 🔑 ADMIN LOGIN CREDENTIALS:
    Email:     info@tecinfoes.com
@@ -236,7 +236,7 @@ Different employees can have different work locations:
 
 ## 📞 Support Files
 
-- **Registration Script:** `backend/src/scripts/registerTechinfo.js`
+- **Registration Script:** `backend/src/scripts/registerTecinfo.js`
 - **Database Test:** `backend/src/scripts/testConnection.js`
 - **API Documentation:** `backend/API_DOCUMENTATION.md`
 - **Setup Guide:** `backend/SETUP_GUIDE.md`
@@ -248,7 +248,7 @@ Different employees can have different work locations:
 
 - [ ] Fix MongoDB Atlas connection
 - [ ] Update GPS coordinates in registration script
-- [ ] Run: `node src/scripts/registerTechinfo.js`
+- [ ] Run: `node src/scripts/registerTecinfo.js`
 - [ ] Confirm company created successfully
 - [ ] Login at http://localhost:3000
 - [ ] Test admin account
@@ -261,5 +261,5 @@ Different employees can have different work locations:
 ---
 
 **Last Updated:** March 6, 2026  
-**Company:** Techinfo  
+**Company:** Tecinfo  
 **Admin Contact:** info@tecinfoes.com

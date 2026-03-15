@@ -10,6 +10,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import EmployeeManagement from './pages/EmployeeManagement';
 import AttendanceHistory from './pages/AttendanceHistory';
 import CompanySettings from './pages/CompanySettings';
+import LeavePage from './pages/LeavePage';
+import AdminLeaveManagement from './pages/AdminLeaveManagement';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
@@ -17,6 +21,7 @@ function App() {
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
 
           {/* Protected Employee Routes */}
@@ -30,6 +35,7 @@ function App() {
           >
             <Route index element={<EmployeeDashboard />} />
             <Route path="attendance" element={<AttendanceHistory />} />
+            <Route path="leave" element={<LeavePage />} />
           </Route>
 
           {/* Protected Admin Routes */}
@@ -44,14 +50,24 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="employees" element={<EmployeeManagement />} />
             <Route path="attendance" element={<AttendanceHistory />} />
+            <Route path="leave" element={<AdminLeaveManagement />} />
             <Route path="settings" element={<CompanySettings />} />
           </Route>
 
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Protected Super Admin Routes */}
+          <Route
+            path="/super-admin"
+            element={
+              <ProtectedRoute superAdminOnly>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<SuperAdminDashboard />} />
+          </Route>
 
           {/* 404 Route */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

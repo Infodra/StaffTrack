@@ -27,6 +27,11 @@ const companySchema = new mongoose.Schema({
     lowercase: true,
     comment: 'Full domain for this tenant (e.g., tecinfo.st.infodra.ai)'
   },
+  logo: {
+    type: String,
+    trim: true,
+    comment: 'URL or path to company logo (e.g., /logos/tecinfo.png or https://...)'
+  },
   office_location: {
     latitude: {
       type: Number,
@@ -56,6 +61,11 @@ const companySchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'suspended', 'cancelled'],
     default: 'active'
+  },
+  created_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Employee',
+    comment: 'Super admin who created this company'
   },
   created_at: {
     type: Date,

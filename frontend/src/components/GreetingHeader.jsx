@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
-import { getGreeting } from '../utils/helpers';
+import { getGreeting, getCompanyLogo } from '../utils/helpers';
 
 const GreetingHeader = ({ user, company }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -31,20 +31,6 @@ const GreetingHeader = ({ user, company }) => {
     });
   };
 
-  const getCompanyLogo = (companyName) => {
-    if (!companyName) return null;
-    
-    const logoMap = {
-      'tecinfo': '/logos/tecinfo.png',
-      'techinfo': '/logos/tecinfo.png',
-      'infodra': '/logos/infodra.png',
-      'infodra technologies': '/logos/infodra.png'
-    };
-    
-    const normalizedName = companyName?.toLowerCase().trim();
-    return logoMap[normalizedName] || null;
-  };
-
   const companyLogo = getCompanyLogo(company?.name);
 
   return (
@@ -52,7 +38,7 @@ const GreetingHeader = ({ user, company }) => {
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
         {/* Greeting Section */}
         <div className="flex-1">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-2">
             {getGreeting()}, {user?.name}! 👋
           </h1>
           <p className="text-lg text-gray-700 font-medium">

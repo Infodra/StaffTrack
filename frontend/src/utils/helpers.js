@@ -58,17 +58,33 @@ export const formatTimeWithSeconds = (date) => {
 export const getTenantFromHostname = () => {
   const hostname = window.location.hostname;
   
-  // Development mode - localhost or 127.0.0.1
-  if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+  // Support subdomain.localhost for local dev (e.g., tecinfo.localhost)
+  if (hostname.endsWith('.localhost')) {
+    return hostname.split('.')[0];
+  }
+  
+  // Plain localhost or 127.0.0.1 = no tenant (super admin / default)
+  if (hostname === 'localhost' || hostname.includes('127.0.0.1')) {
+    return null;
+  }
+
+  // stafftrack.infodra.ai = super admin domain (no tenant)
+  if (hostname === 'stafftrack.infodra.ai') {
     return null;
   }
   
   // Extract subdomain from hostname
-  // Format: tecinfo.st.infodra.ai → ['tecinfo', 'st', 'infodra', 'ai']
+  // tecinfo.stafftrack.infodra.ai → tenant = 'tecinfo'
   const parts = hostname.split('.');
   
-  if (parts.length >= 3) {
-    return parts[0]; // Return first part (subdomain)
+  // subdomain.stafftrack.infodra.ai = 4 parts, first is tenant
+  if (parts.length >= 4) {
+    return parts[0];
+  }
+
+  // Vercel preview URLs: stafftracker-xxx.vercel.app (no tenant)
+  if (hostname.endsWith('.vercel.app')) {
+    return null;
   }
   
   return null;
@@ -161,18 +177,58 @@ export const getStatusColor = (status) => {
 };
 
 /**
- * Get company logo path based on company name
+ * Get company logo path based on company name or tenant
  */
-export const getCompanyLogo = (companyName) => {
-  if (!companyName) return null;
+export const getCompanyLogo = (companyNameOrTenant) => {
+  if (!companyNameOrTenant) return '/logos/infodra.png';
   
+  const normalized = companyNameOrTenant.toLowerCase().trim();
   const logoMap = {
-    'tecinfo': '/logos/tecinfo.png',
-    'techinfo': '/logos/tecinfo.png',
+    'tecinfo': '/logos/Tecinfo-logo.png',
+    'tec001': '/logos/Tecinfo-logo.png',
     'infodra': '/logos/infodra.png',
-    'infodra technologies': '/logos/infodra.png'
+    'infodra technologies': '/logos/infodra.png',
   };
   
-  const normalizedName = companyName.toLowerCase().trim();
-  return logoMap[normalizedName] || null;
+  return logoMap[normalized] || null;
+};
+
+/**
+ * Get branding info for login/dashboard based on tenant subdomain
+ * No tenant (localhost) = Infodra super admin branding
+ * With tenant = company-specific branding
+ */
+export const getCompanyBranding = (tenant, companyData) => {
+  const hostname = window.location.hostname;
+
+  // stafftrack.infodra.ai = Infodra super admin platform
+  if (hostname === 'stafftrack.infodra.ai') {
+    return {
+      name: 'StaffTrack',
+      subtitle: 'by Infodra Technologies',
+      logo: '/logos/infodra.png',
+      tagline: 'Platform Administration',
+    };
+  }
+
+  // If no tenant (localhost) → Tecinfo branding (local dev default)
+  if (!tenant) {
+    return {
+      name: 'Tecinfo',
+      subtitle: 'Employee Attendance System',
+      logo: '/logos/Tecinfo-logo.png',
+      tagline: 'Sign in to access your dashboard',
+    };
+  }
+
+  // Tenant-specific branding
+  const name = companyData?.name || getCompanyDisplayName(tenant);
+  const logo = getCompanyLogo(tenant) || getCompanyLogo(name);
+  
+  return {
+    name,
+    subtitle: 'Employee Attendance System',
+    logo,
+    tagline: 'Sign in to access your dashboard',
+  };
 };

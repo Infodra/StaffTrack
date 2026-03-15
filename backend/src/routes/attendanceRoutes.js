@@ -5,7 +5,10 @@ const {
   logout,
   getHistory,
   getTodayStatus,
-  getAttendanceReport
+  getAttendanceReport,
+  adminUpdateAttendance,
+  adminCreateAttendance,
+  exportAttendanceExcel
 } = require('../controllers/attendanceController');
 const { protect, authorize } = require('../middleware/auth');
 const {
@@ -30,5 +33,14 @@ router.get('/today', getTodayStatus);
 
 // Get attendance report (Admin only)
 router.get('/report', authorize('admin'), getAttendanceReport);
+
+// Export attendance as Excel (Admin only)
+router.get('/export', authorize('admin'), exportAttendanceExcel);
+
+// Admin: Update attendance record (missed login/logout)
+router.put('/:id', authorize('admin'), adminUpdateAttendance);
+
+// Admin: Create attendance record for an employee
+router.post('/admin-create', authorize('admin'), adminCreateAttendance);
 
 module.exports = router;

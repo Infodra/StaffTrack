@@ -26,17 +26,21 @@ api.interceptors.request.use(
     if (tenant) {
       config.headers['X-Company-ID'] = tenant.toUpperCase();
     } else if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
-      // For localhost, try to get from user data or use default
+      // For localhost, try to get from user data
       if (!config.headers['X-Company-ID']) {
         try {
-          const user = JSON.parse(localStorage.getItem('user'));
-          if (user?.company?.company_id) {
-            config.headers['X-Company-ID'] = user.company.company_id;
-          } else {
-            config.headers['X-Company-ID'] = 'TECINFO';
+          const userData = JSON.parse(localStorage.getItem('user'));
+          const companyData = JSON.parse(localStorage.getItem('company'));
+          // Super admin doesn't need X-Company-ID for super-admin routes
+          if (userData?.role === 'super_admin') {
+            if (companyData?.company_id) {
+              config.headers['X-Company-ID'] = companyData.company_id;
+            }
+          } else if (companyData?.company_id) {
+            config.headers['X-Company-ID'] = companyData.company_id;
           }
         } catch (e) {
-          config.headers['X-Company-ID'] = 'TECINFO';
+          // No stored user data; don't set header
         }
       }
     }

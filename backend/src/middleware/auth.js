@@ -43,7 +43,8 @@ const protect = async (req, res, next) => {
       return errorResponse(res, 404, 'Company not found');
     }
 
-    if (company.status !== 'active') {
+    // Only check company status for non-super_admin users
+    if (employee.role !== 'super_admin' && company.status !== 'active') {
       return errorResponse(res, 403, 'Company account is not active');
     }
 
@@ -59,9 +60,13 @@ const protect = async (req, res, next) => {
 
 /**
  * Restrict to specific roles
+ * super_admin always has access to any role-restricted route
  */
 const authorize = (...roles) => {
   return (req, res, next) => {
+    if (req.user.role === 'super_admin') {
+      return next();
+    }
     if (!roles.includes(req.user.role)) {
       return errorResponse(
         res,

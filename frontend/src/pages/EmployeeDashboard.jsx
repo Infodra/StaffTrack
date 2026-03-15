@@ -39,7 +39,12 @@ const EmployeeDashboard = () => {
 
   const handleLogin = async (position) => {
     setMessage({ type: '', text: '' });
-    const result = await login();
+    const coords = position ? {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy
+    } : null;
+    const result = await login(coords);
     
     if (result.success) {
       setMessage({ type: 'success', text: 'Logged in successfully! 🎉' });
@@ -53,7 +58,12 @@ const EmployeeDashboard = () => {
 
   const handleLogout = async (position) => {
     setMessage({ type: '', text: '' });
-    const result = await logout();
+    const coords = position ? {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy
+    } : null;
+    const result = await logout(coords);
     
     if (result.success) {
       setMessage({ type: 'success', text: 'Logged out successfully! Have a great day! 🎉' });
